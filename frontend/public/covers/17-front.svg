@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#5a2a1f"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#ffe0b5" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#e76f51" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffe0b5">Dil Ka Safar</text>
+  <g transform="translate(100 176)"><circle cx="-32" cy="-40" r="5" fill="#e76f51" opacity="0.6"/><circle cx="-24" cy="-50" r="4" fill="#e76f51" opacity="0.4"/><rect x="-38" y="-30" width="12" height="18" fill="#ffe0b5"/><rect x="-48" y="-12" width="64" height="38" rx="5" fill="#e76f51"/><rect x="14" y="-30" width="34" height="56" rx="5" fill="#ffe0b5"/><rect x="21" y="-22" width="20" height="16" rx="2" fill="#5a2a1f"/><circle cx="-32" cy="28" r="9" fill="#ffe0b5"/><circle cx="-32" cy="28" r="3" fill="#5a2a1f"/><circle cx="-10" cy="28" r="9" fill="#ffe0b5"/><circle cx="-10" cy="28" r="3" fill="#5a2a1f"/><circle cx="32" cy="28" r="9" fill="#ffe0b5"/><circle cx="32" cy="28" r="3" fill="#5a2a1f"/><path d="M-56 38 H56" stroke="#ffe0b5" stroke-width="3"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#e76f51" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#ffe0b5">Rohit Sharma</text>
+</svg>

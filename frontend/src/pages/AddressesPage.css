@@ -1,0 +1,4 @@
+.addresses__heading {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-page);
+}

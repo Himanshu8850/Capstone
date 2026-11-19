@@ -1,0 +1,42 @@
+.catalogue__heading {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-page);
+}
+
+.catalogue__count {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
+/* Cards are laid out horizontally (cover beside the details), three to a row on desktop. */
+.catalogue__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalogue__list > li {
+  display: flex;
+  min-width: 0;
+}
+
+.catalogue__list > li > .book-card {
+  flex: 1;
+}
+
+@media (max-width: 1279px) {
+  .catalogue__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mobile: one column of cards. */
+@media (max-width: 639px) {
+  .catalogue__list {
+    grid-template-columns: 1fr;
+  }
+}

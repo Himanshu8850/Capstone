@@ -1,0 +1,29 @@
+.page-shell {
+  min-height: 100vh;
+}
+
+.page-shell__body {
+  display: flex;
+  align-items: stretch;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+.page-shell__main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-5) var(--space-4);
+}
+
+@media (max-width: 1023px) {
+  .page-shell__body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 639px) {
+  .page-shell__main {
+    padding: var(--space-4) var(--space-3);
+  }
+}

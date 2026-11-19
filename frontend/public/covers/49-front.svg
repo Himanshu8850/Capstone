@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#1f2563"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#d7e3ff" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#7b9cff" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#d7e3ff">How the</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#d7e3ff">Monsoon</text>
+  <text x="100" y="92" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#d7e3ff">Thinks</text>
+  <g transform="translate(100 176)"><circle cx="-22" cy="-14" r="18" fill="#7b9cff"/><circle cx="4" cy="-26" r="23" fill="#7b9cff"/><circle cx="30" cy="-12" r="17" fill="#7b9cff"/><rect x="-40" y="-14" width="84" height="18" rx="9" fill="#7b9cff"/><path d="M-30 14 l-5 14" stroke="#d7e3ff" stroke-width="3.5" stroke-linecap="round"/><path d="M-14 22 l-5 14" stroke="#d7e3ff" stroke-width="3.5" stroke-linecap="round"/><path d="M2 14 l-5 14" stroke="#d7e3ff" stroke-width="3.5" stroke-linecap="round"/><path d="M18 22 l-5 14" stroke="#d7e3ff" stroke-width="3.5" stroke-linecap="round"/><path d="M34 14 l-5 14" stroke="#d7e3ff" stroke-width="3.5" stroke-linecap="round"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#7b9cff" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#d7e3ff">Anand Krishnan</text>
+</svg>

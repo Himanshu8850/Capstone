@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: bookygeek
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  profiles:
+    default: dev
+
+server:
+  port: 8080
+  # Local runs bind to loopback only. Containers override this with SERVER_ADDRESS (see docker-compose.yml);
+  # host exposure is limited by publishing ports on 127.0.0.1.
+  address: ${SERVER_ADDRESS:127.0.0.1}
+
+logging:
+  # Boot's native structured (JSON) console logging; request/response bodies are never logged.
+  structured:
+    format:
+      console: ecs
+
+bookygeek:
+  jwt:
+    secret: ${JWT_SECRET}
+    ttl-minutes: ${JWT_TTL_MINUTES:60}
+  cookie:
+    secure: ${COOKIE_SECURE:true}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  rewards:
+    initial-points: ${BOOKYGEEK_REWARDS_INITIAL_POINTS:1000}
+    # Redemption cap as a percentage of subtotal + tax + delivery (approved: 50).
+    cap-percent: 50
+  tax:
+    # 5% of the discounted subtotal, once per order, rounded HALF_UP to two decimals.
+    rate: 0.05
+  delivery:
+    # Rupees per order that contains a physical book; an eBook-only order is free.
+    charge: 40.00
+  cancellation:
+    window-hours: 48
+  # Price bands from PL-05 (inclusive bounds; a missing bound is open-ended).
+  price-bands:
+    - label: Under ₹200
+      max-price: 199.99
+    - label: ₹200–₹499
+      min-price: 200.00
+      max-price: 499.99
+    - label: ₹500–₹999
+      min-price: 500.00
+      max-price: 999.99
+    - label: ₹1,000 and above
+      min-price: 1000.00

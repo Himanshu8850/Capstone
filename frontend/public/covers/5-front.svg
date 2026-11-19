@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#4a3420"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#f5e6c8" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#d4a373" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f5e6c8">Morning Pages</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f5e6c8">Reloaded</text>
+  <g transform="translate(100 176)"><rect x="-30" y="-46" width="60" height="92" rx="5" fill="#d4a373"/><circle cx="-30" cy="-34" r="3.5" fill="#f5e6c8"/><circle cx="-30" cy="-20" r="3.5" fill="#f5e6c8"/><circle cx="-30" cy="-6" r="3.5" fill="#f5e6c8"/><circle cx="-30" cy="8" r="3.5" fill="#f5e6c8"/><circle cx="-30" cy="22" r="3.5" fill="#f5e6c8"/><circle cx="-30" cy="36" r="3.5" fill="#f5e6c8"/><line x1="-16" y1="-30" x2="22" y2="-30" stroke="#f5e6c8" stroke-width="2" opacity="0.7"/><line x1="-16" y1="-16" x2="22" y2="-16" stroke="#f5e6c8" stroke-width="2" opacity="0.7"/><line x1="-16" y1="-2" x2="22" y2="-2" stroke="#f5e6c8" stroke-width="2" opacity="0.7"/><line x1="-16" y1="12" x2="22" y2="12" stroke="#f5e6c8" stroke-width="2" opacity="0.7"/><line x1="-16" y1="26" x2="22" y2="26" stroke="#f5e6c8" stroke-width="2" opacity="0.7"/><rect x="26" y="-40" width="9" height="76" rx="2" fill="#f5e6c8" transform="rotate(22 30 0)"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#d4a373" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#f5e6c8">Meera Iyer</text>
+</svg>

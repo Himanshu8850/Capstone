@@ -1,0 +1,12 @@
+spring:
+  flyway:
+    # Schema migrations plus the reproducible seed used by integration tests.
+    locations: classpath:db/migration,classpath:db/seed
+  datasource:
+    # Compose service "postgres-test" published on loopback only (docker compose --profile test).
+    # Credentials come from the environment; nothing is defaulted here.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5433/bookygeek_test}
+
+bookygeek:
+  cookie:
+    secure: false

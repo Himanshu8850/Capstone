@@ -1,0 +1,23 @@
+.account-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.account-menu__profile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  color: var(--color-text);
+}
+
+.account-menu__profile:hover {
+  color: var(--color-accent-hover);
+}
+
+.account-menu__profile svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}

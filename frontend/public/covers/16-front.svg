@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#5a1f35"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#ffd9e2" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#ff7096" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffd9e2">A Winter in</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffd9e2">Lisbon</text>
+  <g transform="translate(100 176)"><path d="M-56 -42 H56" stroke="#ffd9e2" stroke-width="2"/><path d="M0 -22 L9 -42" stroke="#ffd9e2" stroke-width="3"/><rect x="-44" y="-22" width="88" height="46" rx="9" fill="#ff7096"/><rect x="-34" y="-14" width="22" height="18" rx="3" fill="#5a1f35"/><rect x="-10" y="-14" width="22" height="18" rx="3" fill="#5a1f35"/><rect x="14" y="-14" width="22" height="18" rx="3" fill="#5a1f35"/><rect x="-44" y="10" width="88" height="6" fill="#ffd9e2"/><circle cx="-26" cy="28" r="7" fill="#ffd9e2"/><circle cx="26" cy="28" r="7" fill="#ffd9e2"/><path d="M-56 38 H56" stroke="#ffd9e2" stroke-width="3"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#ff7096" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#ffd9e2">Aisha Rahman</text>
+</svg>

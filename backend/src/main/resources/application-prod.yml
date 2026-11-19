@@ -1,0 +1,8 @@
+spring:
+  flyway:
+    # Production runs schema migrations ONLY. The demo seed location must never be added here.
+    locations: classpath:db/migration
+
+bookygeek:
+  cookie:
+    secure: true

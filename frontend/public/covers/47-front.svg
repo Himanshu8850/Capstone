@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#5c1020"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#ffe3e0" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#ef476f" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffe3e0">Rasoi Ke Raaz</text>
+  <g transform="translate(100 176)"><path d="M-53 14 H-19 Q-19 34 -36 34 Q-53 34 -53 14Z" fill="#ef476f"/><ellipse cx="-36" cy="14" rx="17" ry="6" fill="#ffe3e0"/><ellipse cx="-36" cy="10" rx="11" ry="6" fill="#ffe3e0"/><path d="M-17 14 H17 Q17 34 0 34 Q-17 34 -17 14Z" fill="#ffe3e0"/><ellipse cx="0" cy="14" rx="17" ry="6" fill="#ef476f"/><ellipse cx="0" cy="10" rx="11" ry="6" fill="#ef476f"/><path d="M19 14 H53 Q53 34 36 34 Q19 34 19 14Z" fill="#ef476f"/><ellipse cx="36" cy="14" rx="17" ry="6" fill="#ffe3e0"/><ellipse cx="36" cy="10" rx="11" ry="6" fill="#ffe3e0"/><path d="M-14 -32 Q8 -48 22 -24 Q26 -12 16 -16 Q6 -28 -10 -26Z" fill="#ffe3e0"/><path d="M-10 -28 Q-14 -34 -20 -34" fill="none" stroke="#ef476f" stroke-width="3" stroke-linecap="round"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#ef476f" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#ffe3e0">Kavita Joshi</text>
+</svg>

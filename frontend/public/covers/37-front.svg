@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#0f4c4a"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#f4f1bb" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#4ecdc4" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f4f1bb">Salt and</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f4f1bb">Small Rooms</text>
+  <g transform="translate(100 176)"><path d="M-32 48 V-12 A32 32 0 0 1 32 -12 V48Z" fill="#4ecdc4" opacity="0.35" stroke="#f4f1bb" stroke-width="5"/><path d="M0 -44 V48 M-32 10 H32" stroke="#f4f1bb" stroke-width="4"/><circle cx="16" cy="-14" r="6" fill="#f4f1bb"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#4ecdc4" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#f4f1bb">Alina Voss</text>
+</svg>

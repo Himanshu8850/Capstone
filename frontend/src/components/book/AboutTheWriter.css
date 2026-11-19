@@ -1,0 +1,35 @@
+.writer {
+  margin-top: var(--space-6);
+}
+
+.writer__heading {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-section);
+}
+
+.writer__who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-2);
+}
+
+.writer__name {
+  margin: 0;
+  font-weight: var(--font-weight-strong);
+}
+
+.writer__bio {
+  margin: 0 0 var(--space-3);
+  max-width: 70ch;
+}
+
+.writer__books {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

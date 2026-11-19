@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#4a3420"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#f5e6c8" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#d4a373" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f5e6c8">El Caso de la</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f5e6c8">Calle Sol</text>
+  <g transform="translate(100 176)"><ellipse cx="0" cy="0" rx="8" ry="9.6" fill="none" stroke="#f5e6c8" stroke-width="3" stroke-dasharray="36 7"/><ellipse cx="0" cy="0" rx="16" ry="19.2" fill="none" stroke="#d4a373" stroke-width="3" stroke-dasharray="33 7"/><ellipse cx="0" cy="0" rx="24" ry="28.799999999999997" fill="none" stroke="#f5e6c8" stroke-width="3" stroke-dasharray="30 7"/><ellipse cx="0" cy="0" rx="32" ry="38.4" fill="none" stroke="#d4a373" stroke-width="3" stroke-dasharray="27 7"/><ellipse cx="0" cy="0" rx="40" ry="48" fill="none" stroke="#f5e6c8" stroke-width="3" stroke-dasharray="24 7"/><circle r="3" fill="#f5e6c8"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#d4a373" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#f5e6c8">Lucía Fernández</text>
+</svg>

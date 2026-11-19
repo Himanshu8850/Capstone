@@ -1,0 +1,50 @@
+.profile__heading {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-page);
+}
+
+.profile__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-5, var(--space-4));
+}
+
+.profile__card {
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.profile__card-heading {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-section, 1.125rem);
+}
+
+.profile__details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.profile__details dt {
+  font-size: var(--font-size-caption);
+  color: var(--color-text-muted);
+}
+
+.profile__details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.profile__points {
+  margin: 0;
+  font-size: var(--font-size-page);
+  font-weight: 600;
+}
+
+.profile__addresses {
+  margin-bottom: var(--space-4);
+}

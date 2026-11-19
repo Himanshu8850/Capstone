@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#5a2a1f"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#ffe0b5" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#e76f51" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffe0b5">Kitchen Table</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffe0b5">Years</text>
+  <g transform="translate(100 176)"><rect x="-50" y="16" width="100" height="8" rx="2" fill="#ffe0b5"/><rect x="-42" y="24" width="6" height="26" fill="#ffe0b5"/><rect x="36" y="24" width="6" height="26" fill="#ffe0b5"/><ellipse cx="-14" cy="2" rx="19" ry="15" fill="#e76f51"/><ellipse cx="-14" cy="-13" rx="9" ry="4" fill="#ffe0b5"/><path d="M4 0 L24 -10 L24 -5 L7 10Z" fill="#e76f51"/><path d="M-33 -2 C-48 -2 -48 12 -33 10" fill="none" stroke="#e76f51" stroke-width="4"/><rect x="28" y="4" width="17" height="12" rx="3" fill="#ffe0b5"/><path d="M-14 -22 q-6 -8 0 -14 t0 -14" fill="none" stroke="#e76f51" stroke-width="2.5" opacity="0.7" stroke-linecap="round"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#e76f51" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#ffe0b5">Padma Reddy</text>
+</svg>

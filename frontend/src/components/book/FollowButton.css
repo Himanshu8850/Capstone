@@ -1,0 +1,24 @@
+.follow-button {
+  padding: var(--space-1) var(--space-4);
+  color: var(--color-on-accent);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-strong);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.follow-button:hover {
+  background: var(--color-accent-hover);
+}
+
+.follow-button--following {
+  color: var(--color-text);
+  background: transparent;
+  border-color: var(--color-border);
+}
+
+.follow-button--following:hover {
+  background: var(--color-surface-raised);
+}

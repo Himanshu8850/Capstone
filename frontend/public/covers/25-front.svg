@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#2e2a4f"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#f1e9ff" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#9d8df1" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f1e9ff">Antariksh</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f1e9ff">Yatri</text>
+  <g transform="translate(100 176)"><path d="M-9 34 L0 56 L9 34Z" fill="#f1e9ff"/><path d="M-12 12 L-32 38 L-12 30Z" fill="#f1e9ff"/><path d="M12 12 L32 38 L12 30Z" fill="#f1e9ff"/><path d="M0 -50 C22 -30 22 10 13 32 H-13 C-22 10 -22 -30 0 -50Z" fill="#9d8df1"/><circle cx="0" cy="-14" r="9" fill="#2e2a4f" stroke="#f1e9ff" stroke-width="3"/><circle cx="-44" cy="-34" r="2.5" fill="#f1e9ff"/><circle cx="44" cy="-20" r="2" fill="#f1e9ff"/><circle cx="40" cy="20" r="3" fill="#f1e9ff"/><circle cx="-40" cy="10" r="2" fill="#f1e9ff"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#9d8df1" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#f1e9ff">Rohit Sharma</text>
+</svg>

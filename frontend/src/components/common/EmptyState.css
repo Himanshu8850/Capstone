@@ -1,0 +1,11 @@
+.empty-state {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.empty-state__message {
+  color: var(--color-text-muted);
+}

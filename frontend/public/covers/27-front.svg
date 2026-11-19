@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#1b4332"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#f1faee" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#74c69d" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f1faee">Whispers of</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f1faee">the Salt</text>
+  <text x="100" y="92" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#f1faee">Forest</text>
+  <g transform="translate(100 176)"><path d="M-56 46 H56" stroke="#f1faee" stroke-width="4"/><g transform="translate(-32 30) scale(1.05)"><polygon points="0,-44 -20,-14 20,-14" fill="#74c69d"/><polygon points="0,-28 -25,6 25,6" fill="#f1faee"/><rect x="-4" y="6" width="8" height="12" fill="#74c69d"/></g><g transform="translate(30 32) scale(1)"><polygon points="0,-44 -20,-14 20,-14" fill="#f1faee"/><polygon points="0,-28 -25,6 25,6" fill="#74c69d"/><rect x="-4" y="6" width="8" height="12" fill="#f1faee"/></g><g transform="translate(0 26) scale(1.25)"><polygon points="0,-44 -20,-14 20,-14" fill="#74c69d"/><polygon points="0,-28 -25,6 25,6" fill="#f1faee"/><rect x="-4" y="6" width="8" height="12" fill="#74c69d"/></g><circle cx="-48" cy="-30" r="2.5" fill="#ffffff" opacity="0.75"/><circle cx="-14" cy="-42" r="2.5" fill="#ffffff" opacity="0.75"/><circle cx="46" cy="-34" r="2.5" fill="#ffffff" opacity="0.75"/><circle cx="26" cy="-18" r="2.5" fill="#ffffff" opacity="0.75"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#74c69d" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#f1faee">Alina Voss</text>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#262a33"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#ffe9a8" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#f4a261" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffe9a8">The Lamp-Post</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffe9a8">Murders</text>
+  <g transform="translate(100 176)"><circle cx="0" cy="-30" r="30" fill="#f4a261" opacity="0.22"/><rect x="-3" y="-18" width="6" height="64" fill="#ffe9a8"/><rect x="-13" y="40" width="26" height="8" rx="2" fill="#ffe9a8"/><path d="M-14 -18 H14 L8 -42 H-8Z" fill="#f4a261"/><path d="M-12 -42 H12 L0 -52Z" fill="#ffe9a8"/><path d="M-50 36 q12 -6 24 0 M26 28 q12 -6 24 0" fill="none" stroke="#ffe9a8" stroke-width="2" opacity="0.5"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#f4a261" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#ffe9a8">Edward Finch</text>
+</svg>

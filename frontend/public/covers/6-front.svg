@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#262a33"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#ffe9a8" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#f4a261" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffe9a8">The Quiet</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#ffe9a8">Advantage</text>
+  <g transform="translate(100 176)"><polygon points="-26,-22 -18,-46 -6,-28" fill="#f4a261"/><polygon points="26,-22 18,-46 6,-28" fill="#f4a261"/><ellipse cx="0" cy="6" rx="31" ry="38" fill="#f4a261"/><circle cx="-13" cy="-8" r="13" fill="#ffe9a8"/><circle cx="13" cy="-8" r="13" fill="#ffe9a8"/><circle cx="-13" cy="-8" r="5" fill="#1b1b1b"/><circle cx="13" cy="-8" r="5" fill="#1b1b1b"/><polygon points="-5,2 5,2 0,14" fill="#ffe9a8"/><path d="M-18 18 Q0 34 18 18" fill="none" stroke="#ffe9a8" stroke-width="2"/><rect x="-46" y="45" width="92" height="6" rx="3" fill="#ffe9a8"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#f4a261" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#ffe9a8">Meera Iyer</text>
+</svg>

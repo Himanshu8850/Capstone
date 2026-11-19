@@ -1,0 +1,35 @@
+# Secrets and local configuration (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and build output
+node_modules/
+target/
+dist/
+build/
+*.class
+*.log
+
+# Test output
+test-results/
+playwright-report/
+coverage/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# Local API-tool environments (may contain tokens)
+*.postman_environment.json
+*.insomnia-environment.json
+
+# Local tool state
+.bob/tmp/

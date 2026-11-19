@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#7a3e00"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#fff3c4" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#ffb703" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#fff3c4">Seekhne Ki</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#fff3c4">Kala</text>
+  <g transform="translate(100 176)"><path d="M0 -26 Q-28 -36 -52 -26 V34 Q-28 24 0 34Z" fill="#ffb703"/><path d="M0 -26 Q28 -36 52 -26 V34 Q28 24 0 34Z" fill="#fff3c4"/><circle cx="0" cy="-40" r="9" fill="#ffffff" opacity="0.9"/><path d="M-4 -30 h8 M-3 -27 h6" stroke="#fff3c4" stroke-width="2"/><path d="M-44 -14 Q-28 -20 -10 -14" fill="none" stroke="#fff3c4" stroke-width="2" opacity="0.8"/><path d="M-44 -4 Q-28 -10 -10 -4" fill="none" stroke="#fff3c4" stroke-width="2" opacity="0.8"/><path d="M-44 6 Q-28 0 -10 6" fill="none" stroke="#fff3c4" stroke-width="2" opacity="0.8"/></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#ffb703" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#fff3c4">Rohit Sharma</text>
+</svg>

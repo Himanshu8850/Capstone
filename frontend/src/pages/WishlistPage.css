@@ -1,0 +1,34 @@
+.wishlist__heading {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-page);
+}
+
+.wishlist__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wishlist__list > li {
+  display: flex;
+  min-width: 0;
+}
+
+.wishlist__list > li > .book-card {
+  flex: 1;
+}
+
+@media (max-width: 1279px) {
+  .wishlist__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  .wishlist__list {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <rect width="200" height="300" fill="#7a3e00"/>
+  <rect x="10" y="10" width="180" height="280" fill="none" stroke="#fff3c4" stroke-width="2"/>
+  <rect x="15" y="15" width="170" height="270" fill="none" stroke="#ffb703" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="46" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#fff3c4">The Shared</text>
+  <text x="100" y="69" font-size="19" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle" fill="#fff3c4">Lamp</text>
+  <g transform="translate(100 176)"><g transform="translate(0 -4) scale(1)"><circle cx="0" cy="-14" r="34" fill="#ffb703" opacity="0.18"/><path d="M-36 6 H36 Q30 36 0 36 Q-30 36 -36 6Z" fill="#fff3c4"/><path d="M0 -44 C-16 -22 -12 -4 0 -2 C12 -4 16 -22 0 -44Z" fill="#ffb703"/><path d="M0 -26 C-6 -16 -5 -8 0 -6 C5 -8 6 -16 0 -26Z" fill="#ffffff" opacity="0.8"/></g><g transform="translate(-42 34) scale(0.5)"><circle cx="0" cy="-14" r="34" fill="#ffb703" opacity="0.18"/><path d="M-36 6 H36 Q30 36 0 36 Q-30 36 -36 6Z" fill="#fff3c4"/><path d="M0 -44 C-16 -22 -12 -4 0 -2 C12 -4 16 -22 0 -44Z" fill="#ffb703"/><path d="M0 -26 C-6 -16 -5 -8 0 -6 C5 -8 6 -16 0 -26Z" fill="#ffffff" opacity="0.8"/></g><g transform="translate(42 34) scale(0.5)"><circle cx="0" cy="-14" r="34" fill="#ffb703" opacity="0.18"/><path d="M-36 6 H36 Q30 36 0 36 Q-30 36 -36 6Z" fill="#fff3c4"/><path d="M0 -44 C-16 -22 -12 -4 0 -2 C12 -4 16 -22 0 -44Z" fill="#ffb703"/><path d="M0 -26 C-6 -16 -5 -8 0 -6 C5 -8 6 -16 0 -26Z" fill="#ffffff" opacity="0.8"/></g></g>
+  <line x1="60" y1="252" x2="140" y2="252" stroke="#ffb703" stroke-width="1.5"/>
+  <text x="100" y="272" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" fill="#fff3c4">Anand Krishnan</text>
+</svg>

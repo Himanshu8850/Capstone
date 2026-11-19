@@ -1,0 +1,2714 @@
+openapi: 3.0.3
+info:
+  title: BookyGeek API
+  version: 1.3.0
+  description: |
+    Contract for the BookyGeek online bookstore (single Spring Boot modular monolith, PostgreSQL).
+    This file is the hand-written source of truth (gate G-API); backend code is written to match it.
+
+    **Conventions**
+    - Base path `/api/v1`, JSON only (`application/json`), camelCase fields, ISO-8601 dates and instants.
+    - Money is a **decimal string with two decimals** (for example `"1090.00"`), never a JSON number.
+    - Identifiers are integers. Enumerations are upper-case strings.
+    - Catalogue results are paged with a fixed page size of **12** (the page size is not a client parameter).
+    - Every 4xx/5xx response body is one `ApiError`.
+    - Status codes: 200 read/update/action, 201 create, 204 delete/logout, 400 invalid input,
+      401 not authenticated, 404 unknown or not-owned resource, 409 business conflict, 500 generic.
+      403 is not used (single role); another customer's data is answered as 404.
+    - Authentication is the HttpOnly `BG_AUTH` cookie. Every state-changing call of a signed-in customer
+      (POST, PUT, DELETE on a protected operation) must also send the `X-XSRF-TOKEN` header, copied from the
+      `XSRF-TOKEN` cookie that the server sets on responses. Such a call without a matching token is rejected
+      and changes nothing. Public operations (`security: []`) need neither the cookie nor the token.
+    - Responses never contain password hashes, token versions or card data. Card details are accepted only in the
+      `placeOrder` request body and are never echoed, stored or logged.
+    - Card and UPI values in the examples are the documented dummy test values (PL-06). Card `4111-1111-1111-1111`
+      and UPI `demo@upi` succeed; card `4000-0000-0000-0002` and UPI `failure@upi` are declined.
+servers:
+  - url: /api/v1
+    description: Same-origin base path (the frontend proxy forwards /api to the backend).
+tags:
+  - name: Authentication
+    description: Registration, login, logout and the current customer.
+  - name: Addresses
+    description: Saved delivery addresses of the signed-in customer.
+  - name: Reference
+    description: Static reference data.
+  - name: Catalogue
+    description: Categories, brands and books (public).
+  - name: Basket
+    description: Guest basket preview and the signed-in customer's basket.
+  - name: Checkout
+    description: Reward balance and checkout quote.
+  - name: Orders
+    description: Order placement (with simulated payment), history, cancellation and Buy Again.
+security: []
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      operationId: register
+      summary: Register a customer account
+      description: Creates an account. The e-mail is the unique login identifier and is compared case-insensitively.
+        Registration does not sign the customer in. A new account starts with the seeded reward balance.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              valid:
+                summary: Valid registration
+                value:
+                  fullName: Asha Verma
+                  email: asha.verma@example.com
+                  password: <your-password>
+                  confirmPassword: <your-password>
+      responses:
+        '201':
+          description: Account created.
+          headers:
+            Location:
+              $ref: '#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+              examples:
+                created:
+                  value:
+                    id: 1
+                    fullName: Asha Verma
+                    email: asha.verma@example.com
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '409':
+          description: The e-mail address is already registered (compared case-insensitively).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                emailTaken:
+                  $ref: '#/components/examples/ErrEmailTaken'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/login:
+    post:
+      tags: [Authentication]
+      operationId: login
+      summary: Log in
+      description: Validates the e-mail (case-insensitive) and password. On success the server sets the HttpOnly
+        `BG_AUTH` cookie (SameSite=Strict, 60-minute lifetime) and the readable `XSRF-TOKEN` cookie. A wrong e-mail and
+        a wrong password return the same generic error.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              valid:
+                summary: Valid credentials
+                value:
+                  email: asha.verma@example.com
+                  password: <your-password>
+      responses:
+        '200':
+          description: Signed in.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+              examples:
+                signedIn:
+                  value:
+                    id: 1
+                    fullName: Asha Verma
+                    email: asha.verma@example.com
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          description: Generic failure; does not reveal whether the e-mail or the password was wrong.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                invalidCredentials:
+                  $ref: '#/components/examples/ErrInvalidCredentials'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      operationId: logout
+      summary: Log out
+      description: Expires the `BG_AUTH` cookie and invalidates the token that was in use, so a replayed cookie is
+        rejected afterwards.
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      responses:
+        '204':
+          description: Signed out; the cookie is expired.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetCookie'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/me:
+    get:
+      tags: [Authentication]
+      operationId: getCurrentCustomer
+      summary: Get the signed-in customer
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: The signed-in customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+              examples:
+                customer:
+                  value:
+                    id: 1
+                    fullName: Asha Verma
+                    email: asha.verma@example.com
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /addresses:
+    get:
+      tags: [Addresses]
+      operationId: listAddresses
+      summary: List the customer's saved addresses
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Saved addresses (empty array when none).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+              examples:
+                twoAddresses:
+                  value:
+                    - id: 1
+                      fullName: Asha Verma
+                      phone: '9876543210'
+                      addressLine1: 12 Lake View Road
+                      addressLine2: Near City Park
+                      city: Bengaluru
+                      state: Karnataka
+                      pinCode: '560001'
+                      country: India
+                    - id: 2
+                      fullName: Asha Verma
+                      phone: '9876543210'
+                      addressLine1: 5 Marine Drive
+                      city: Mumbai
+                      state: Maharashtra
+                      pinCode: '400020'
+                      country: India
+                none:
+                  summary: No saved addresses
+                  value: []
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [Addresses]
+      operationId: createAddress
+      summary: Save a new address
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressInput'
+            examples:
+              valid:
+                summary: Valid address
+                value:
+                  fullName: Asha Verma
+                  phone: '9876543210'
+                  addressLine1: 12 Lake View Road
+                  addressLine2: Near City Park
+                  city: Bengaluru
+                  state: Karnataka
+                  pinCode: '560001'
+                  country: India
+      responses:
+        '201':
+          description: Address saved.
+          headers:
+            Location:
+              $ref: '#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+              examples:
+                created:
+                  value:
+                    id: 1
+                    fullName: Asha Verma
+                    phone: '9876543210'
+                    addressLine1: 12 Lake View Road
+                    addressLine2: Near City Park
+                    city: Bengaluru
+                    state: Karnataka
+                    pinCode: '560001'
+                    country: India
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /addresses/{id}:
+    parameters:
+      - $ref: '#/components/parameters/AddressId'
+    put:
+      tags: [Addresses]
+      operationId: updateAddress
+      summary: Replace a saved address
+      description: Full replacement of one of the signed-in customer's addresses. An address that does not exist or
+        belongs to another customer is answered as 404.
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressInput'
+            examples:
+              valid:
+                summary: Corrected PIN code
+                value:
+                  fullName: Asha Verma
+                  phone: '9876543210'
+                  addressLine1: 12 Lake View Road
+                  city: Bengaluru
+                  state: Karnataka
+                  pinCode: '560002'
+                  country: India
+      responses:
+        '200':
+          description: Address updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+              examples:
+                updated:
+                  value:
+                    id: 1
+                    fullName: Asha Verma
+                    phone: '9876543210'
+                    addressLine1: 12 Lake View Road
+                    city: Bengaluru
+                    state: Karnataka
+                    pinCode: '560002'
+                    country: India
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Addresses]
+      operationId: deleteAddress
+      summary: Delete a saved address
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      responses:
+        '204':
+          description: Address deleted.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /reference/states:
+    get:
+      tags: [Reference]
+      operationId: listStates
+      summary: List the Indian states and union territories
+      description: The 28 states and 8 union territories used for address entry. When the address country is India
+        the state must be one of these values.
+      responses:
+        '200':
+          description: State names in alphabetical order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              examples:
+                states:
+                  summary: Excerpt of the 36 values
+                  value: [Andaman and Nicobar Islands, Andhra Pradesh, Karnataka, Maharashtra, West Bengal]
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /categories:
+    get:
+      tags: [Catalogue]
+      operationId: listCategories
+      summary: List the category tree
+      description: Two-level tree (Fiction and Non-Fiction with their leaf categories). Books belong to leaf categories;
+        a parent category lists the books of itself and its children. The "All" entry is a UI element, not data.
+      responses:
+        '200':
+          description: Top-level categories with their children.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+              examples:
+                tree:
+                  value:
+                    - id: 1
+                      name: Fiction
+                      children:
+                        - id: 3
+                          name: Romance
+                          children: []
+                        - id: 4
+                          name: Mystery
+                          children: []
+                    - id: 2
+                      name: Non-Fiction
+                      children:
+                        - id: 13
+                          name: Self Help
+                          children: []
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /brands:
+    get:
+      tags: [Catalogue]
+      operationId: listBrands
+      summary: List brands (publishers)
+      description: A brand is the book's publisher. Only publishers that have at least one listed book appear.
+      responses:
+        '200':
+          description: Brands in alphabetical order with their book counts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Brand'
+              examples:
+                brands:
+                  value:
+                    - name: Maple Leaf Press
+                      bookCount: 8
+                    - name: Northwind Books
+                      bookCount: 6
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /books:
+    get:
+      tags: [Catalogue]
+      operationId: listBooks
+      summary: List books
+      description: Filters, sorting and paging combine. `category` selects the whole subtree of that category.
+        Genre tags are categories, so a genre tag uses `category`. Page size is fixed at 12.
+      parameters:
+        - name: category
+          in: query
+          description: Category id; a parent category includes its children.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: brand
+          in: query
+          description: Exact publisher name.
+          schema:
+            type: string
+            maxLength: 120
+        - name: q
+          in: query
+          description: Search text matched against title and author.
+          schema:
+            type: string
+            maxLength: 100
+        - name: author
+          in: query
+          description: Exact author name.
+          schema:
+            type: string
+            maxLength: 120
+        - name: language
+          in: query
+          schema:
+            type: string
+            maxLength: 40
+        - name: format
+          in: query
+          schema:
+            $ref: '#/components/schemas/BookFormat'
+        - name: minPrice
+          in: query
+          description: Lower price bound, inclusive (decimal string).
+          schema:
+            $ref: '#/components/schemas/Money'
+        - name: maxPrice
+          in: query
+          description: Upper price bound, inclusive (decimal string).
+          schema:
+            $ref: '#/components/schemas/Money'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [RELEVANCE, PRICE_ASC, PRICE_DESC, TITLE_ASC]
+            default: RELEVANCE
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: One page of books (at most 12).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookPage'
+              examples:
+                firstPage:
+                  summary: First page of a two-page result
+                  value:
+                    items:
+                      - id: 7
+                        title: The Habit Loop
+                        author: Meera Iyer
+                        description: A practical guide to building small daily routines.
+                        format: PAPERBACK
+                        publisher: Maple Leaf Press
+                        language: English
+                        price: '500.00'
+                        frontCoverUrl: /covers/7-front.svg
+                        categories:
+                          - id: 13
+                            name: Self Help
+                        available: true
+                        stockQuantity: 25
+                        deliveryDate: '2026-11-17'
+                      - id: 12
+                        title: Quiet Mornings
+                        author: Meera Iyer
+                        description: Essays on slowing down.
+                        format: EBOOK
+                        publisher: Northwind Books
+                        language: English
+                        price: '299.00'
+                        frontCoverUrl: /covers/12-front.svg
+                        categories:
+                          - id: 13
+                            name: Self Help
+                        available: true
+                        stockQuantity: null
+                        deliveryDate: '2026-11-12'
+                    page: 0
+                    pageSize: 12
+                    totalItems: 14
+                    totalPages: 2
+                empty:
+                  summary: No match
+                  value:
+                    items: []
+                    page: 0
+                    pageSize: 12
+                    totalItems: 0
+                    totalPages: 0
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /books/filter-options:
+    get:
+      tags: [Catalogue]
+      operationId: getBookFilterOptions
+      summary: Get the filter option lists
+      description: Languages present in the listed books, the three formats and the price-band presets. A band is a
+        labelled preset of `minPrice`/`maxPrice`.
+      responses:
+        '200':
+          description: Filter option lists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterOptions'
+              examples:
+                options:
+                  value:
+                    languages: [English, French, Hindi, Spanish]
+                    formats: [PAPERBACK, HARDCOVER, EBOOK]
+                    priceBands:
+                      - label: Under ₹200
+                        minPrice: null
+                        maxPrice: '199.99'
+                      - label: ₹200–₹499
+                        minPrice: '200.00'
+                        maxPrice: '499.99'
+                      - label: ₹500–₹999
+                        minPrice: '500.00'
+                        maxPrice: '999.99'
+                      - label: ₹1,000 and above
+                        minPrice: '1000.00'
+                        maxPrice: null
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /books/{id}:
+    parameters:
+      - $ref: '#/components/parameters/BookId'
+    get:
+      tags: [Catalogue]
+      operationId: getBook
+      summary: Get one book
+      responses:
+        '200':
+          description: The book with its breadcrumb and back cover.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetail'
+              examples:
+                book:
+                  value:
+                    id: 7
+                    title: The Habit Loop
+                    author: Meera Iyer
+                    description: A practical guide to building small daily routines.
+                    format: PAPERBACK
+                    publisher: Maple Leaf Press
+                    language: English
+                    price: '500.00'
+                    frontCoverUrl: /covers/7-front.svg
+                    backCoverUrl: /covers/7-back.svg
+                    categories:
+                      - id: 13
+                        name: Self Help
+                    available: true
+                    stockQuantity: 25
+                    deliveryDate: '2026-11-17'
+                    breadcrumb:
+                      - id: 2
+                        name: Non-Fiction
+                      - id: 13
+                        name: Self Help
+        '404':
+          description: No such book.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                bookNotFound:
+                  $ref: '#/components/examples/ErrBookNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /books/{id}/related:
+    parameters:
+      - $ref: '#/components/parameters/BookId'
+    get:
+      tags: [Catalogue]
+      operationId: listRelatedBooks
+      summary: List related books
+      description: Other books that share a category with this book; never the book itself. Empty when there are none.
+      responses:
+        '200':
+          description: Related books.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookSummary'
+              examples:
+                related:
+                  value:
+                    - id: 12
+                      title: Quiet Mornings
+                      author: Meera Iyer
+                      description: Essays on slowing down.
+                      format: EBOOK
+                      publisher: Northwind Books
+                      language: English
+                      price: '299.00'
+                      frontCoverUrl: /covers/12-front.svg
+                      categories:
+                        - id: 13
+                          name: Self Help
+                      available: true
+                      stockQuantity: null
+                      deliveryDate: '2026-11-12'
+                none:
+                  summary: No related books
+                  value: []
+        '404':
+          description: No such book.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                bookNotFound:
+                  $ref: '#/components/examples/ErrBookNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /books/{id}/reviews:
+    parameters:
+      - $ref: '#/components/parameters/BookId'
+    get:
+      tags: [Catalogue]
+      operationId: listBookReviews
+      summary: List the reviews of a book
+      description: Public. Newest first. `averageRating` is rounded HALF_UP to one decimal and is null when the book has
+        no reviews. A review comment may be null.
+      security: []
+      responses:
+        '200':
+          description: The average rating, the number of reviews and the reviews.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewList'
+              examples:
+                reviews:
+                  value:
+                    averageRating: 4.5
+                    reviewCount: 2
+                    reviews:
+                      - id: 1
+                        reviewerName: Asha Verma
+                        rating: 5
+                        comment: Great read
+                        createdAt: '2026-11-18T06:30:00Z'
+                      - id: 2
+                        reviewerName: Ravi Nair
+                        rating: 4
+                        comment: null
+                        createdAt: '2026-11-17T09:00:00Z'
+        '404':
+          description: No such book.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                bookNotFound:
+                  $ref: '#/components/examples/ErrBookNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [Catalogue]
+      operationId: createBookReview
+      summary: Review a book
+      description: One review per customer per book. A review cannot be edited or deleted.
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewInput'
+            examples:
+              valid:
+                summary: Valid review
+                value:
+                  rating: 5
+                  comment: Great read
+      responses:
+        '201':
+          description: Review saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+              examples:
+                created:
+                  value:
+                    id: 1
+                    reviewerName: Asha Verma
+                    rating: 5
+                    comment: Great read
+                    createdAt: '2026-11-18T06:30:00Z'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: No such book.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                bookNotFound:
+                  $ref: '#/components/examples/ErrBookNotFound'
+        '409':
+          description: The customer has already reviewed this book.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                alreadyReviewed:
+                  $ref: '#/components/examples/ErrAlreadyReviewed'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /basket/preview:
+    post:
+      tags: [Basket]
+      operationId: previewBasket
+      summary: Price a guest basket
+      description: Public. Prices the lines sent by a guest (kept in the browser) with the current prices, delivery
+        dates and totals. Nothing is stored. Unavailable books are priced but flagged as not available.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BasketLinesRequest'
+            examples:
+              guest:
+                value:
+                  items:
+                    - bookId: 7
+                      quantity: 2
+      responses:
+        '200':
+          description: Priced basket (not persisted).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Basket'
+              examples:
+                priced:
+                  $ref: '#/components/examples/BasketPhysical'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /basket:
+    get:
+      tags: [Basket]
+      operationId: getBasket
+      summary: Get the customer's basket
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: The basket with prices, delivery dates and totals.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Basket'
+              examples:
+                withItems:
+                  $ref: '#/components/examples/BasketPhysical'
+                empty:
+                  $ref: '#/components/examples/BasketEmpty'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /basket/items:
+    post:
+      tags: [Basket]
+      operationId: addBasketItem
+      summary: Add a book to the basket
+      description: Adding a book that is already present increases its quantity. A line may hold at most 10 units and,
+        for a physical book, never more than the available stock. Adding does not reserve stock.
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddBasketItemRequest'
+            examples:
+              one:
+                value:
+                  bookId: 7
+                  quantity: 1
+      responses:
+        '200':
+          description: The updated basket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Basket'
+              examples:
+                updated:
+                  $ref: '#/components/examples/BasketPhysical'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: No such book.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                bookNotFound:
+                  $ref: '#/components/examples/ErrBookNotFound'
+        '409':
+          $ref: '#/components/responses/BasketQuantityConflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /basket/items/{bookId}:
+    parameters:
+      - $ref: '#/components/parameters/BasketBookId'
+    put:
+      tags: [Basket]
+      operationId: updateBasketItem
+      summary: Set the quantity of a basket line
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBasketItemRequest'
+            examples:
+              three:
+                value:
+                  quantity: 3
+      responses:
+        '200':
+          description: The updated basket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Basket'
+              examples:
+                updated:
+                  $ref: '#/components/examples/BasketPhysical'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: The book is not in the customer's basket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                notFound:
+                  $ref: '#/components/examples/ErrNotFound'
+        '409':
+          $ref: '#/components/responses/BasketQuantityConflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Basket]
+      operationId: removeBasketItem
+      summary: Remove a book from the basket
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      responses:
+        '200':
+          description: The basket without that line (an empty basket after the last removal).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Basket'
+              examples:
+                empty:
+                  $ref: '#/components/examples/BasketEmpty'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: The book is not in the customer's basket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                notFound:
+                  $ref: '#/components/examples/ErrNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /basket/merge:
+    post:
+      tags: [Basket]
+      operationId: mergeGuestBasket
+      summary: Merge the guest basket into the customer's basket
+      description: Called after login. Quantities for the same book are summed and capped at min(10, stock);
+        unavailable or removed books are skipped. The report lists every adjustment so the client can tell the
+        customer. The client clears its local guest basket only after a successful response.
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BasketLinesRequest'
+            examples:
+              guest:
+                value:
+                  items:
+                    - bookId: 7
+                      quantity: 2
+                    - bookId: 31
+                      quantity: 1
+      responses:
+        '200':
+          description: The merged basket and the adjustment report.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasketWithReport'
+              examples:
+                merged:
+                  value:
+                    basket:
+                      items:
+                        - book:
+                            id: 7
+                            title: The Habit Loop
+                            author: Meera Iyer
+                            description: A practical guide to building small daily routines.
+                            format: PAPERBACK
+                            publisher: Maple Leaf Press
+                            language: English
+                            price: '500.00'
+                            frontCoverUrl: /covers/7-front.svg
+                            categories:
+                              - id: 13
+                                name: Self Help
+                            available: true
+                            stockQuantity: 25
+                            deliveryDate: '2026-11-17'
+                          quantity: 2
+                          lineTotal: '1000.00'
+                      itemCount: 2
+                      subtotal: '1000.00'
+                      tax: '50.00'
+                      deliveryCharge: '40.00'
+                      total: '1090.00'
+                    report:
+                      adjustments:
+                        - bookId: 31
+                          title: Out of Print Atlas
+                          reason: UNAVAILABLE
+                          requestedQuantity: 1
+                          addedQuantity: 0
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /recommendations:
+    get:
+      tags: [Basket]
+      operationId: getBasketRecommendations
+      summary: Get recommendations for the customer
+      description: Books in the same categories as books the customer has previously ordered, excluding books already
+        in the basket. Empty when the customer has no order history. Guests do not call this operation.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Recommended books (possibly empty).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookSummary'
+              examples:
+                recommended:
+                  value:
+                    - id: 12
+                      title: Quiet Mornings
+                      author: Meera Iyer
+                      description: Essays on slowing down.
+                      format: EBOOK
+                      publisher: Northwind Books
+                      language: English
+                      price: '299.00'
+                      frontCoverUrl: /covers/12-front.svg
+                      categories:
+                        - id: 13
+                          name: Self Help
+                      available: true
+                      stockQuantity: null
+                      deliveryDate: '2026-11-12'
+                noHistory:
+                  summary: Customer with no order history
+                  value: []
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /rewards/me:
+    get:
+      tags: [Checkout]
+      operationId: getRewardAccount
+      summary: Get the reward-point balance
+      description: One reward point is worth ₹1. New accounts start with the seeded balance; points are only redeemed
+        (never earned) and are restored when an order is cancelled.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RewardAccount'
+              examples:
+                newAccount:
+                  value:
+                    balance: 1000
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /checkout/quote:
+    post:
+      tags: [Checkout]
+      operationId: quoteCheckout
+      summary: Quote the checkout totals
+      description: Revalidates the basket (stock and price) and applies the requested reward points. The maximum
+        redeemable points are `min(availableRewardBalance, floor(0.50 × (subtotal + tax + deliveryCharge)))`.
+        Tax (5% of the discounted subtotal, once per order, HALF_UP to two decimals) and the delivery charge (₹40.00
+        for physical-only and mixed orders, ₹0.00 for eBook-only orders) are described on `CheckoutQuote`.
+        Nothing is stored.
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutQuoteRequest'
+            examples:
+              hundredPoints:
+                value:
+                  pointsToRedeem: 100
+      responses:
+        '200':
+          description: The quote. `issues` lists basket changes that must be resolved or acknowledged before payment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutQuote'
+              examples:
+                quote:
+                  value:
+                    subtotal: '1000.00'
+                    tax: '50.00'
+                    deliveryCharge: '40.00'
+                    total: '1090.00'
+                    balance: 1000
+                    maxRedeemablePoints: 545
+                    pointsToRedeem: 100
+                    payableTotal: '990.00'
+                    issues: []
+                withIssue:
+                  summary: A price changed since the book was added
+                  value:
+                    subtotal: '1100.00'
+                    tax: '55.00'
+                    deliveryCharge: '40.00'
+                    total: '1195.00'
+                    balance: 1000
+                    maxRedeemablePoints: 597
+                    pointsToRedeem: 0
+                    payableTotal: '1195.00'
+                    issues:
+                      - bookId: 7
+                        title: The Habit Loop
+                        type: PRICE_CHANGED
+                        message: The price of this book changed from 500.00 to 550.00.
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '409':
+          description: The basket is empty, or the requested points exceed the balance or the 50% cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                pointsLimit:
+                  $ref: '#/components/examples/ErrPointsLimit'
+                emptyBasket:
+                  $ref: '#/components/examples/ErrEmptyBasket'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /orders:
+    get:
+      tags: [Orders]
+      operationId: listOrders
+      summary: List the customer's orders
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: The customer's orders, newest first (empty array when none).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderSummary'
+              examples:
+                orders:
+                  value:
+                    - id: 2
+                      reference: BG-000002
+                      status: PLACED
+                      placedAt: '2026-11-12T10:15:30Z'
+                      items:
+                        - book:
+                            id: 7
+                            title: The Habit Loop
+                            author: Meera Iyer
+                            description: A practical guide to building small daily routines.
+                            format: PAPERBACK
+                            publisher: Maple Leaf Press
+                            language: English
+                            price: '500.00'
+                            frontCoverUrl: /covers/7-front.svg
+                            categories:
+                              - id: 13
+                                name: Self Help
+                            available: true
+                            stockQuantity: 23
+                            deliveryDate: '2026-11-17'
+                          quantity: 2
+                          unitPrice: '500.00'
+                          lineTotal: '1000.00'
+                      payableTotal: '990.00'
+                none:
+                  summary: No orders yet
+                  value: []
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [Orders]
+      operationId: placeOrder
+      summary: Place an order (with simulated payment)
+      description: |
+        Payment is a step of order placement: there is no separate pay operation. In one transaction the server
+        revalidates the basket, stock, `expectedPayableTotal` and the points cap, runs the **simulated** payment,
+        creates the order, decreases physical stock, deducts the redeemed points and clears the basket.
+        If any step fails nothing changes, except that a declined payment attempt is recorded as `FAILED`.
+
+        - Credit card / debit card: `payment.card` is required. `4111-1111-1111-1111` succeeds and
+          `4000-0000-0000-0002` is declined. Payment status of the order is `PAID`.
+        - UPI: `payment.upi` is required. `demo@upi` succeeds and `failure@upi` is declined. Status `PAID`.
+        - COD: no payment details; the order is placed with payment status `PENDING_ON_DELIVERY`.
+        - Card details exist only in this request; they are never echoed, stored or logged.
+
+        The `Idempotency-Key` header makes retries safe: repeating a request with the same key and customer returns
+        the stored result (200, same body) and never creates a second order.
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequest'
+            examples:
+              cardSuccess:
+                summary: Credit card, saved address, 100 points (approved)
+                value:
+                  addressId: 1
+                  paymentMethod: CREDIT_CARD
+                  payment:
+                    card:
+                      number: 4111-1111-1111-1111
+                      nameOnCard: Asha Verma
+                      cvv: '123'
+                      expiry: 12/2030
+                  pointsToRedeem: 100
+                  expectedPayableTotal: '990.00'
+              cardDeclined:
+                summary: Debit card declined by the simulated gateway
+                value:
+                  addressId: 1
+                  paymentMethod: DEBIT_CARD
+                  payment:
+                    card:
+                      number: 4000-0000-0000-0002
+                      nameOnCard: Asha Verma
+                      cvv: '123'
+                      expiry: 12/2030
+                  pointsToRedeem: 0
+                  expectedPayableTotal: '1090.00'
+              upiSuccess:
+                summary: UPI approved
+                value:
+                  addressId: 1
+                  paymentMethod: UPI
+                  payment:
+                    upi:
+                      upiId: demo@upi
+                  pointsToRedeem: 0
+                  expectedPayableTotal: '1090.00'
+              upiDeclined:
+                summary: UPI declined
+                value:
+                  addressId: 1
+                  paymentMethod: UPI
+                  payment:
+                    upi:
+                      upiId: failure@upi
+                  pointsToRedeem: 0
+                  expectedPayableTotal: '1090.00'
+              cashOnDelivery:
+                summary: Cash on delivery with a new address
+                value:
+                  address:
+                    fullName: Asha Verma
+                    phone: '9876543210'
+                    addressLine1: 12 Lake View Road
+                    city: Bengaluru
+                    state: Karnataka
+                    pinCode: '560001'
+                    country: India
+                  paymentMethod: COD
+                  pointsToRedeem: 0
+                  expectedPayableTotal: '1090.00'
+      responses:
+        '200':
+          description: Replay of an earlier request with the same `Idempotency-Key`; the stored order is returned and no
+            new order is created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              examples:
+                replay:
+                  $ref: '#/components/examples/OrderPlacedPaid'
+        '201':
+          description: Order placed.
+          headers:
+            Location:
+              $ref: '#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              examples:
+                paid:
+                  $ref: '#/components/examples/OrderPlacedPaid'
+                cod:
+                  $ref: '#/components/examples/OrderPlacedCod'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '409':
+          description: Business conflict; nothing was ordered. `PAYMENT_DECLINED` leaves the basket, stock and points
+            unchanged so the customer can retry or choose another method.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                paymentDeclined:
+                  $ref: '#/components/examples/ErrPaymentDeclined'
+                basketChanged:
+                  $ref: '#/components/examples/ErrBasketChanged'
+                outOfStock:
+                  $ref: '#/components/examples/ErrOutOfStock'
+                pointsLimit:
+                  $ref: '#/components/examples/ErrPointsLimit'
+                emptyBasket:
+                  $ref: '#/components/examples/ErrEmptyBasket'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /orders/{id}:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    get:
+      tags: [Orders]
+      operationId: getOrder
+      summary: Get one order
+      description: An order that does not exist or belongs to another customer is answered as 404.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: The order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              examples:
+                placed:
+                  $ref: '#/components/examples/OrderPlacedPaid'
+                cancelled:
+                  $ref: '#/components/examples/OrderCancelled'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /orders/{id}/cancellation:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    post:
+      tags: [Orders]
+      operationId: cancelOrder
+      summary: Cancel an order
+      description: Allowed only while the order is `PLACED` and strictly less than 48 hours old (an order exactly 48:00:00
+        old is rejected), for every payment method including COD. In one transaction the status becomes `CANCELLED`,
+        physical stock is restored, redeemed points are restored and the payment becomes `REFUNDED` (simulated, no money
+        moves) or, for COD, `CANCELLED`.
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      responses:
+        '200':
+          description: The cancelled order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              examples:
+                cancelled:
+                  $ref: '#/components/examples/OrderCancelled'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The window has expired or the order is already cancelled; no state changed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                windowExpired:
+                  $ref: '#/components/examples/ErrCancellationWindow'
+                alreadyCancelled:
+                  $ref: '#/components/examples/ErrAlreadyCancelled'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /orders/{id}/buy-again:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    post:
+      tags: [Orders]
+      operationId: buyAgain
+      summary: Add an earlier order's books to the basket
+      description: Adds each book of the order that is still in the catalogue and available, at its current price and
+        delivery date. Out-of-stock or removed books are not added and are listed in the report; an over-stock quantity
+        is reduced to the available quantity and reported.
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      responses:
+        '200':
+          description: The updated basket and the add report.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasketWithReport'
+              examples:
+                partial:
+                  value:
+                    basket:
+                      items:
+                        - book:
+                            id: 7
+                            title: The Habit Loop
+                            author: Meera Iyer
+                            description: A practical guide to building small daily routines.
+                            format: PAPERBACK
+                            publisher: Maple Leaf Press
+                            language: English
+                            price: '500.00'
+                            frontCoverUrl: /covers/7-front.svg
+                            categories:
+                              - id: 13
+                                name: Self Help
+                            available: true
+                            stockQuantity: 1
+                            deliveryDate: '2026-11-17'
+                          quantity: 1
+                          lineTotal: '500.00'
+                      itemCount: 1
+                      subtotal: '500.00'
+                      tax: '25.00'
+                      deliveryCharge: '40.00'
+                      total: '565.00'
+                    report:
+                      adjustments:
+                        - bookId: 7
+                          title: The Habit Loop
+                          reason: QUANTITY_REDUCED
+                          requestedQuantity: 2
+                          addedQuantity: 1
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: BG_AUTH
+      description: HttpOnly JWT cookie set by `login` (SameSite=Strict, 60-minute lifetime, Secure by environment).
+        The browser sends it automatically; the SPA never reads it. A missing, expired or logged-out token gives 401.
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-XSRF-TOKEN
+      description: CSRF token, copied from the readable `XSRF-TOKEN` cookie. Required together with `cookieAuth` on every
+        POST, PUT and DELETE of a signed-in customer.
+  parameters:
+    AddressId:
+      name: id
+      in: path
+      required: true
+      description: Address id.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    BookId:
+      name: id
+      in: path
+      required: true
+      description: Book id.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    BasketBookId:
+      name: bookId
+      in: path
+      required: true
+      description: Id of the book whose basket line is addressed.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    OrderId:
+      name: id
+      in: path
+      required: true
+      description: Order id.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    Page:
+      name: page
+      in: query
+      description: Zero-based page number. The page size is fixed at 12 and cannot be changed.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated UUID, unique per checkout attempt, reused when the same attempt is retried.
+      schema:
+        type: string
+        format: uuid
+  headers:
+    Location:
+      description: URL of the created resource.
+      schema:
+        type: string
+    SetCookie:
+      description: Authentication cookies. `BG_AUTH` is HttpOnly and SameSite=Strict; `XSRF-TOKEN` is readable by the SPA.
+        On logout both cookies are expired.
+      schema:
+        type: string
+  responses:
+    ValidationFailed:
+      description: The request is invalid. `fieldErrors` lists each invalid field.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            validationFailed:
+              $ref: '#/components/examples/ErrValidation'
+    Unauthenticated:
+      description: No valid `BG_AUTH` cookie (missing, expired or invalidated by logout), or the `X-XSRF-TOKEN` header is
+        missing or wrong on a state-changing call.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            unauthenticated:
+              $ref: '#/components/examples/ErrUnauthenticated'
+    NotFound:
+      description: The resource does not exist or belongs to another customer.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            notFound:
+              $ref: '#/components/examples/ErrNotFound'
+    BasketQuantityConflict:
+      description: The quantity would exceed 10 units of the book or the available physical stock.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            quantityLimit:
+              $ref: '#/components/examples/ErrQuantityLimit'
+            outOfStock:
+              $ref: '#/components/examples/ErrOutOfStock'
+    InternalError:
+      description: Unexpected server error. The body is generic and never contains internal details.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            internalError:
+              $ref: '#/components/examples/ErrInternal'
+  schemas:
+    Money:
+      type: string
+      description: Decimal amount in rupees with exactly two decimals.
+      pattern: '^[0-9]+\.[0-9]{2}$'
+      example: '1090.00'
+    ApiError:
+      type: object
+      description: The single error shape used by every 4xx and 5xx response.
+      required: [status, code, message, timestamp]
+      properties:
+        status:
+          type: integer
+          description: HTTP status code.
+          example: 400
+        code:
+          type: string
+          description: Machine-readable error code.
+          enum:
+            - VALIDATION_FAILED
+            - UNAUTHENTICATED
+            - INVALID_CREDENTIALS
+            - EMAIL_TAKEN
+            - NOT_FOUND
+            - BOOK_NOT_FOUND
+            - QUANTITY_LIMIT
+            - OUT_OF_STOCK
+            - EMPTY_BASKET
+            - BASKET_CHANGED
+            - POINTS_LIMIT_EXCEEDED
+            - PAYMENT_DECLINED
+            - CANCELLATION_WINDOW_EXPIRED
+            - ALREADY_CANCELLED
+            - ALREADY_REVIEWED
+            - INTERNAL_ERROR
+        message:
+          type: string
+          description: Human-readable, generic message safe to show to the customer.
+        fieldErrors:
+          type: array
+          description: Present for `VALIDATION_FAILED`.
+          items:
+            $ref: '#/components/schemas/FieldError'
+        timestamp:
+          type: string
+          format: date-time
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          example: email
+        message:
+          type: string
+          example: Enter a valid e-mail address.
+    Customer:
+      type: object
+      required: [id, fullName, email]
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+    RegisterRequest:
+      type: object
+      required: [fullName, email, password, confirmPassword]
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '\S'
+          description: Required, not blank.
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 64
+          pattern: '^(?=.*[A-Za-z])(?=.*[0-9]).{8,64}$'
+          description: 8 to 64 characters with at least one letter and one digit.
+        confirmPassword:
+          type: string
+          format: password
+          description: Must equal `password`.
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+          maxLength: 64
+    AddressInput:
+      type: object
+      required: [fullName, phone, addressLine1, city, state, pinCode, country]
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '\S'
+        phone:
+          type: string
+          pattern: '^[0-9]{10}$'
+          description: Exactly 10 digits.
+        addressLine1:
+          type: string
+          minLength: 1
+          maxLength: 150
+          pattern: '\S'
+        addressLine2:
+          type: string
+          maxLength: 150
+          description: Optional.
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: '\S'
+        state:
+          type: string
+          minLength: 1
+          maxLength: 60
+          description: When `country` is India it must be one of the values of `listStates`; otherwise free text.
+        pinCode:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: Exactly 6 digits.
+        country:
+          type: string
+          minLength: 1
+          maxLength: 56
+          default: India
+    Address:
+      allOf:
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: integer
+              format: int64
+        - $ref: '#/components/schemas/AddressInput'
+    Category:
+      type: object
+      required: [id, name, children]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        children:
+          type: array
+          description: Empty for a leaf category.
+          items:
+            $ref: '#/components/schemas/Category'
+    CategoryRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+    Brand:
+      type: object
+      required: [name, bookCount]
+      properties:
+        name:
+          type: string
+          description: Publisher name.
+        bookCount:
+          type: integer
+          minimum: 1
+    BookFormat:
+      type: string
+      enum: [PAPERBACK, HARDCOVER, EBOOK]
+    BookSummary:
+      description: |
+        `stockQuantity` is always present. For an `EBOOK` it is `null`; for a `PAPERBACK` or `HARDCOVER` it is a
+        non-null integer greater than or equal to zero.
+      allOf:
+        - type: object
+          required: [id, title, author, description, format, publisher, language, price, frontCoverUrl, categories, available, stockQuantity, deliveryDate]
+          properties:
+            id:
+              type: integer
+              format: int64
+            title:
+              type: string
+            author:
+              type: string
+            description:
+              type: string
+            format:
+              $ref: '#/components/schemas/BookFormat'
+            publisher:
+              type: string
+              description: The brand.
+            language:
+              type: string
+            price:
+              $ref: '#/components/schemas/Money'
+            frontCoverUrl:
+              type: string
+            categories:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategoryRef'
+            available:
+              type: boolean
+              description: False for a physical book with zero stock; an eBook is always available.
+            stockQuantity:
+              type: integer
+              nullable: true
+              minimum: 0
+              description: Units in stock; null for an eBook (unlimited availability).
+            deliveryDate:
+              type: string
+              format: date
+              description: Today plus 5 days for a physical book; today for an eBook.
+        - oneOf:
+            - description: An eBook has no stock count.
+              required: [format, stockQuantity]
+              properties:
+                format:
+                  type: string
+                  enum: [EBOOK]
+                stockQuantity:
+                  type: integer
+                  nullable: true
+                  enum: [null]
+            - description: A physical book has a stock count of zero or more.
+              required: [format, stockQuantity]
+              properties:
+                format:
+                  type: string
+                  enum: [PAPERBACK, HARDCOVER]
+                stockQuantity:
+                  type: integer
+                  nullable: false
+                  minimum: 0
+    BookDetail:
+      allOf:
+        - $ref: '#/components/schemas/BookSummary'
+        - type: object
+          required: [breadcrumb]
+          properties:
+            backCoverUrl:
+              type: string
+              nullable: true
+            authorBio:
+              type: string
+              nullable: true
+              description: Short biography of the writer (about 50 words); null when the writer has none (AMD-003).
+            breadcrumb:
+              type: array
+              description: Category path from the top-level category to the book's category.
+              items:
+                $ref: '#/components/schemas/CategoryRef'
+    Review:
+      type: object
+      required: [id, reviewerName, rating, comment, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        reviewerName:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+          maxLength: 100
+        createdAt:
+          type: string
+          format: date-time
+    ReviewList:
+      type: object
+      required: [averageRating, reviewCount, reviews]
+      properties:
+        averageRating:
+          type: number
+          nullable: true
+          description: Average rating rounded HALF_UP to one decimal; null when there are no reviews.
+        reviewCount:
+          type: integer
+          minimum: 0
+        reviews:
+          type: array
+          description: Newest first.
+          items:
+            $ref: '#/components/schemas/Review'
+    ReviewInput:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Required. Outside 1 to 5 gives VALIDATION_FAILED ("Select a rating from 1 to 5.").
+        comment:
+          type: string
+          maxLength: 100
+          description: Optional. Longer than 100 characters gives VALIDATION_FAILED.
+    BookPage:
+      type: object
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          maxItems: 12
+          items:
+            $ref: '#/components/schemas/BookSummary'
+        page:
+          type: integer
+          minimum: 0
+        pageSize:
+          type: integer
+          enum: [12]
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    FilterOptions:
+      type: object
+      required: [languages, formats, priceBands]
+      properties:
+        languages:
+          type: array
+          items:
+            type: string
+        formats:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookFormat'
+        priceBands:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceBand'
+    PriceBand:
+      type: object
+      required: [label]
+      properties:
+        label:
+          type: string
+        minPrice:
+          type: string
+          nullable: true
+          pattern: '^[0-9]+\.[0-9]{2}$'
+        maxPrice:
+          type: string
+          nullable: true
+          pattern: '^[0-9]+\.[0-9]{2}$'
+    BasketLine:
+      type: object
+      required: [book, quantity, lineTotal]
+      properties:
+        book:
+          $ref: '#/components/schemas/BookSummary'
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+        lineTotal:
+          $ref: '#/components/schemas/Money'
+    Basket:
+      type: object
+      description: Totals follow the approved pricing rules documented on `CheckoutQuote` (tax is 5% of the discounted
+        subtotal, calculated once per order and rounded HALF_UP to two decimals; delivery is ₹40.00 per order for a
+        physical-only or mixed basket and ₹0.00 for an eBook-only basket; total = subtotal + tax + deliveryCharge).
+      required: [items, itemCount, subtotal, tax, deliveryCharge, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BasketLine'
+        itemCount:
+          type: integer
+          minimum: 0
+          description: Total units across all lines (shown on the header basket badge).
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        tax:
+          $ref: '#/components/schemas/Money'
+        deliveryCharge:
+          $ref: '#/components/schemas/Money'
+        total:
+          $ref: '#/components/schemas/Money'
+    BasketLineRequest:
+      type: object
+      required: [bookId, quantity]
+      properties:
+        bookId:
+          type: integer
+          format: int64
+          minimum: 1
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+    BasketLinesRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/BasketLineRequest'
+    AddBasketItemRequest:
+      type: object
+      required: [bookId]
+      properties:
+        bookId:
+          type: integer
+          format: int64
+          minimum: 1
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 1
+    UpdateBasketItemRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+    BasketAdjustment:
+      type: object
+      required: [bookId, title, reason, requestedQuantity, addedQuantity]
+      properties:
+        bookId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        reason:
+          type: string
+          enum: [UNAVAILABLE, NOT_IN_CATALOGUE, QUANTITY_REDUCED]
+          description: UNAVAILABLE = out of stock; NOT_IN_CATALOGUE = no longer listed; QUANTITY_REDUCED = capped at
+            min(10, stock).
+        requestedQuantity:
+          type: integer
+          minimum: 1
+        addedQuantity:
+          type: integer
+          minimum: 0
+    BasketReport:
+      type: object
+      required: [adjustments]
+      properties:
+        adjustments:
+          type: array
+          description: Empty when nothing was adjusted.
+          items:
+            $ref: '#/components/schemas/BasketAdjustment'
+    BasketWithReport:
+      type: object
+      required: [basket, report]
+      properties:
+        basket:
+          $ref: '#/components/schemas/Basket'
+        report:
+          $ref: '#/components/schemas/BasketReport'
+    RewardAccount:
+      type: object
+      required: [balance]
+      properties:
+        balance:
+          type: integer
+          minimum: 0
+          description: Points; one point is worth ₹1.
+    CheckoutQuoteRequest:
+      type: object
+      required: [pointsToRedeem]
+      properties:
+        pointsToRedeem:
+          type: integer
+          minimum: 0
+          description: Whole points; 0 means no redemption.
+    CheckoutIssue:
+      type: object
+      required: [bookId, title, type, message]
+      properties:
+        bookId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        type:
+          type: string
+          enum: [OUT_OF_STOCK, QUANTITY_REDUCED, PRICE_CHANGED, NOT_IN_CATALOGUE]
+        message:
+          type: string
+    CheckoutQuote:
+      type: object
+      required: [subtotal, tax, deliveryCharge, total, balance, maxRedeemablePoints, pointsToRedeem, payableTotal, issues]
+      description: |
+        Approved pricing and reward rules (amounts are `Money` strings in rupees with two decimals):
+
+        - **Tax**: 5% of the discounted subtotal (subtotal minus any discount; no discount exists because coupons are
+          excluded, so the discounted subtotal equals `subtotal`). Tax is calculated once per order, not per line,
+          and rounded to two decimal places using HALF_UP.
+        - **Delivery charge**: physical-only order ₹40.00 per order; eBook-only order ₹0.00; mixed physical and eBook
+          order ₹40.00 per order.
+        - **Total**: `subtotal + tax + deliveryCharge`.
+        - **Maximum redeemable points**: `min(availableRewardBalance, floor(0.50 × (subtotal + tax + deliveryCharge)))`.
+          The 50% cap is applied to the total payable amount before reward redemption (subtotal, tax and delivery
+          charge) and is rounded down to a whole point.
+        - **Payable total**: `total − pointsToRedeem` (one point is worth ₹1).
+      properties:
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        tax:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: 5% of the discounted subtotal, calculated once per order and rounded HALF_UP to two decimals.
+        deliveryCharge:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: '"40.00" for a physical-only or mixed order, "0.00" for an eBook-only order (per order).'
+        total:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: subtotal + tax + deliveryCharge, before reward redemption.
+        balance:
+          type: integer
+          minimum: 0
+          description: Available reward balance in points.
+        maxRedeemablePoints:
+          type: integer
+          minimum: 0
+          description: min(availableRewardBalance, floor(0.50 × (subtotal + tax + deliveryCharge))).
+        pointsToRedeem:
+          type: integer
+          minimum: 0
+        payableTotal:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: total − pointsToRedeem.
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutIssue'
+    CardDetails:
+      type: object
+      required: [number, nameOnCard, cvv, expiry]
+      properties:
+        number:
+          type: string
+          writeOnly: true
+          pattern: '^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}$'
+          description: Format XXXX-XXXX-XXXX-XXXX.
+        nameOnCard:
+          type: string
+          writeOnly: true
+          minLength: 2
+          maxLength: 60
+        cvv:
+          type: string
+          writeOnly: true
+          pattern: '^[0-9]{3}$'
+          description: Exactly 3 digits.
+        expiry:
+          type: string
+          writeOnly: true
+          pattern: '^(0[1-9]|1[0-2])/[0-9]{4}$'
+          description: MM/YYYY, not in the past.
+    UpiDetails:
+      type: object
+      required: [upiId]
+      properties:
+        upiId:
+          type: string
+          pattern: '^[A-Za-z0-9._-]{2,64}@[A-Za-z][A-Za-z0-9]{1,31}$'
+          description: Simulated UPI ID in the form name@handle.
+    PaymentDetails:
+      type: object
+      description: Supply `card` for CREDIT_CARD and DEBIT_CARD, `upi` for UPI, and omit the object for COD.
+        Exactly one of `card` or `upi` is present; both together, or neither, is invalid. The match with
+        `paymentMethod` is enforced on `PlaceOrderRequest`.
+      properties:
+        card:
+          $ref: '#/components/schemas/CardDetails'
+        upi:
+          $ref: '#/components/schemas/UpiDetails'
+      oneOf:
+        - required: [card]
+        - required: [upi]
+    PaymentMethod:
+      type: string
+      enum: [CREDIT_CARD, DEBIT_CARD, UPI, COD]
+    PaymentStatus:
+      type: string
+      description: PAID for card and UPI; PENDING_ON_DELIVERY for COD; REFUNDED (simulated) or CANCELLED after cancellation.
+      enum: [PAID, PENDING_ON_DELIVERY, REFUNDED, CANCELLED]
+    PlaceOrderRequest:
+      type: object
+      required: [paymentMethod, pointsToRedeem, expectedPayableTotal]
+      description: |
+        Send exactly one of `addressId` (a saved address) or `address` (entered at checkout). When the basket holds
+        only e-books nothing is delivered, so send neither (AMD-004); sending one is accepted and ignored.
+
+        The `payment` object must match `paymentMethod`:
+        - `CREDIT_CARD` and `DEBIT_CARD`: `payment` is required and contains `card` (and not `upi`).
+        - `UPI`: `payment` is required and contains `upi` (and not `card`).
+        - `COD`: `payment` must be omitted (neither `card` nor `upi` is accepted).
+
+        `pointsToRedeem` may not exceed `maxRedeemablePoints` of the checkout quote, that is
+        `min(availableRewardBalance, floor(0.50 × (subtotal + tax + deliveryCharge)))`.
+        `expectedPayableTotal` is the quoted `payableTotal` = `subtotal + tax + deliveryCharge − pointsToRedeem`
+        (one point = ₹1); the order is rejected if the recalculated amount differs. Tax and delivery are
+        calculated as documented on `CheckoutQuote`.
+      properties:
+        addressId:
+          type: integer
+          format: int64
+          minimum: 1
+        address:
+          $ref: '#/components/schemas/AddressInput'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        payment:
+          $ref: '#/components/schemas/PaymentDetails'
+        pointsToRedeem:
+          type: integer
+          minimum: 0
+        expectedPayableTotal:
+          $ref: '#/components/schemas/Money'
+      allOf:
+        - not:
+            required: [addressId, address]
+        - oneOf:
+            - description: Card payment (credit or debit) requires `payment.card` and rejects `payment.upi`.
+              required: [paymentMethod, payment]
+              properties:
+                paymentMethod:
+                  type: string
+                  enum: [CREDIT_CARD, DEBIT_CARD]
+                payment:
+                  type: object
+                  required: [card]
+                  properties:
+                    card:
+                      $ref: '#/components/schemas/CardDetails'
+                    upi:
+                      $ref: '#/components/schemas/UpiDetails'
+                  not:
+                    required: [upi]
+                    properties:
+                      upi:
+                        $ref: '#/components/schemas/UpiDetails'
+            - description: UPI payment requires `payment.upi` and rejects `payment.card`.
+              required: [paymentMethod, payment]
+              properties:
+                paymentMethod:
+                  type: string
+                  enum: [UPI]
+                payment:
+                  type: object
+                  required: [upi]
+                  properties:
+                    card:
+                      $ref: '#/components/schemas/CardDetails'
+                    upi:
+                      $ref: '#/components/schemas/UpiDetails'
+                  not:
+                    required: [card]
+                    properties:
+                      card:
+                        $ref: '#/components/schemas/CardDetails'
+            - description: Cash on delivery accepts no payment details (`payment` is omitted).
+              required: [paymentMethod]
+              properties:
+                paymentMethod:
+                  type: string
+                  enum: [COD]
+                payment:
+                  $ref: '#/components/schemas/PaymentDetails'
+              not:
+                required: [payment]
+                properties:
+                  payment:
+                    $ref: '#/components/schemas/PaymentDetails'
+    OrderItem:
+      type: object
+      required: [book, quantity, unitPrice, lineTotal]
+      properties:
+        book:
+          $ref: '#/components/schemas/BookSummary'
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+        unitPrice:
+          $ref: '#/components/schemas/Money'
+        lineTotal:
+          $ref: '#/components/schemas/Money'
+    OrderStatus:
+      type: string
+      enum: [PLACED, CANCELLED]
+    OrderSummary:
+      type: object
+      required: [id, reference, status, placedAt, items, payableTotal]
+      properties:
+        id:
+          type: integer
+          format: int64
+        reference:
+          type: string
+          example: BG-000002
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        placedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        payableTotal:
+          $ref: '#/components/schemas/Money'
+    Order:
+      type: object
+      required: [id, reference, status, placedAt, items, paymentMethod, paymentStatus, subtotal, tax, deliveryCharge, pointsRedeemed, payableTotal, cancellable]
+      properties:
+        id:
+          type: integer
+          format: int64
+        reference:
+          type: string
+          example: BG-000002
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        placedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        address:
+          nullable: true
+          description: The delivery address; null (or absent) for an order of e-books only (AMD-004).
+          allOf:
+            - $ref: '#/components/schemas/AddressInput'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatus'
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        tax:
+          $ref: '#/components/schemas/Money'
+        deliveryCharge:
+          $ref: '#/components/schemas/Money'
+        pointsRedeemed:
+          type: integer
+          minimum: 0
+        payableTotal:
+          $ref: '#/components/schemas/Money'
+        cancellable:
+          type: boolean
+          description: True only while the order is PLACED and less than 48 hours old.
+        cancellableUntil:
+          type: string
+          format: date-time
+          nullable: true
+          description: Placement time plus 48 hours (exclusive); null once cancelled.
+  examples:
+    ErrValidation:
+      summary: VALIDATION_FAILED
+      value:
+        status: 400
+        code: VALIDATION_FAILED
+        message: The request contains invalid values.
+        fieldErrors:
+          - field: phone
+            message: Phone must be exactly 10 digits.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrUnauthenticated:
+      summary: UNAUTHENTICATED
+      value:
+        status: 401
+        code: UNAUTHENTICATED
+        message: Please log in to continue.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrInvalidCredentials:
+      summary: INVALID_CREDENTIALS
+      value:
+        status: 401
+        code: INVALID_CREDENTIALS
+        message: The e-mail or password is incorrect.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrEmailTaken:
+      summary: EMAIL_TAKEN
+      value:
+        status: 409
+        code: EMAIL_TAKEN
+        message: An account with this e-mail address already exists.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrNotFound:
+      summary: NOT_FOUND
+      value:
+        status: 404
+        code: NOT_FOUND
+        message: The requested item was not found.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrBookNotFound:
+      summary: BOOK_NOT_FOUND
+      value:
+        status: 404
+        code: BOOK_NOT_FOUND
+        message: This book was not found.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrQuantityLimit:
+      summary: QUANTITY_LIMIT
+      value:
+        status: 409
+        code: QUANTITY_LIMIT
+        message: You can add at most 10 copies of one book.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrOutOfStock:
+      summary: OUT_OF_STOCK
+      value:
+        status: 409
+        code: OUT_OF_STOCK
+        message: Only 1 copy of this book is available.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrEmptyBasket:
+      summary: EMPTY_BASKET
+      value:
+        status: 409
+        code: EMPTY_BASKET
+        message: Your basket is empty.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrBasketChanged:
+      summary: BASKET_CHANGED
+      value:
+        status: 409
+        code: BASKET_CHANGED
+        message: Prices or availability in your basket have changed. Please review your basket.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrPointsLimit:
+      summary: POINTS_LIMIT_EXCEEDED
+      value:
+        status: 409
+        code: POINTS_LIMIT_EXCEEDED
+        message: You can redeem at most 545 points on this order.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrPaymentDeclined:
+      summary: PAYMENT_DECLINED
+      value:
+        status: 409
+        code: PAYMENT_DECLINED
+        message: Your payment was declined. Please try again or choose another payment method.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrCancellationWindow:
+      summary: CANCELLATION_WINDOW_EXPIRED
+      value:
+        status: 409
+        code: CANCELLATION_WINDOW_EXPIRED
+        message: This order can no longer be cancelled because 48 hours have passed.
+        timestamp: '2026-11-14T10:15:30Z'
+    ErrAlreadyCancelled:
+      summary: ALREADY_CANCELLED
+      value:
+        status: 409
+        code: ALREADY_CANCELLED
+        message: This order has already been cancelled.
+        timestamp: '2026-11-12T10:15:30Z'
+    ErrAlreadyReviewed:
+      summary: ALREADY_REVIEWED
+      value:
+        status: 409
+        code: ALREADY_REVIEWED
+        message: You have already reviewed this book.
+        timestamp: '2026-11-18T06:30:00Z'
+    ErrInternal:
+      summary: INTERNAL_ERROR
+      value:
+        status: 500
+        code: INTERNAL_ERROR
+        message: Something went wrong. Please try again later.
+        timestamp: '2026-11-12T10:15:30Z'
+    BasketPhysical:
+      summary: Two copies of one paperback
+      value:
+        items:
+          - book:
+              id: 7
+              title: The Habit Loop
+              author: Meera Iyer
+              description: A practical guide to building small daily routines.
+              format: PAPERBACK
+              publisher: Maple Leaf Press
+              language: English
+              price: '500.00'
+              frontCoverUrl: /covers/7-front.svg
+              categories:
+                - id: 13
+                  name: Self Help
+              available: true
+              stockQuantity: 25
+              deliveryDate: '2026-11-17'
+            quantity: 2
+            lineTotal: '1000.00'
+        itemCount: 2
+        subtotal: '1000.00'
+        tax: '50.00'
+        deliveryCharge: '40.00'
+        total: '1090.00'
+    BasketEmpty:
+      summary: Empty basket
+      value:
+        items: []
+        itemCount: 0
+        subtotal: '0.00'
+        tax: '0.00'
+        deliveryCharge: '0.00'
+        total: '0.00'
+    OrderPlacedPaid:
+      summary: Card order with 100 points redeemed
+      value:
+        id: 2
+        reference: BG-000002
+        status: PLACED
+        placedAt: '2026-11-12T10:15:30Z'
+        items:
+          - book:
+              id: 7
+              title: The Habit Loop
+              author: Meera Iyer
+              description: A practical guide to building small daily routines.
+              format: PAPERBACK
+              publisher: Maple Leaf Press
+              language: English
+              price: '500.00'
+              frontCoverUrl: /covers/7-front.svg
+              categories:
+                - id: 13
+                  name: Self Help
+              available: true
+              stockQuantity: 23
+              deliveryDate: '2026-11-17'
+            quantity: 2
+            unitPrice: '500.00'
+            lineTotal: '1000.00'
+        address:
+          fullName: Asha Verma
+          phone: '9876543210'
+          addressLine1: 12 Lake View Road
+          addressLine2: Near City Park
+          city: Bengaluru
+          state: Karnataka
+          pinCode: '560001'
+          country: India
+        paymentMethod: CREDIT_CARD
+        paymentStatus: PAID
+        subtotal: '1000.00'
+        tax: '50.00'
+        deliveryCharge: '40.00'
+        pointsRedeemed: 100
+        payableTotal: '990.00'
+        cancellable: true
+        cancellableUntil: '2026-11-14T10:15:30Z'
+    OrderPlacedCod:
+      summary: Cash on delivery order
+      value:
+        id: 3
+        reference: BG-000003
+        status: PLACED
+        placedAt: '2026-11-12T11:00:00Z'
+        items:
+          - book:
+              id: 12
+              title: Quiet Mornings
+              author: Meera Iyer
+              description: Essays on slowing down.
+              format: EBOOK
+              publisher: Northwind Books
+              language: English
+              price: '299.00'
+              frontCoverUrl: /covers/12-front.svg
+              categories:
+                - id: 13
+                  name: Self Help
+              available: true
+              stockQuantity: null
+              deliveryDate: '2026-11-12'
+            quantity: 1
+            unitPrice: '299.00'
+            lineTotal: '299.00'
+        address:
+          fullName: Asha Verma
+          phone: '9876543210'
+          addressLine1: 12 Lake View Road
+          city: Bengaluru
+          state: Karnataka
+          pinCode: '560001'
+          country: India
+        paymentMethod: COD
+        paymentStatus: PENDING_ON_DELIVERY
+        subtotal: '299.00'
+        tax: '14.95'
+        deliveryCharge: '0.00'
+        pointsRedeemed: 0
+        payableTotal: '313.95'
+        cancellable: true
+        cancellableUntil: '2026-11-14T11:00:00Z'
+    OrderCancelled:
+      summary: Cancelled card order (points restored, payment refunded in simulation)
+      value:
+        id: 2
+        reference: BG-000002
+        status: CANCELLED
+        placedAt: '2026-11-12T10:15:30Z'
+        items:
+          - book:
+              id: 7
+              title: The Habit Loop
+              author: Meera Iyer
+              description: A practical guide to building small daily routines.
+              format: PAPERBACK
+              publisher: Maple Leaf Press
+              language: English
+              price: '500.00'
+              frontCoverUrl: /covers/7-front.svg
+              categories:
+                - id: 13
+                  name: Self Help
+              available: true
+              stockQuantity: 25
+              deliveryDate: '2026-11-17'
+            quantity: 2
+            unitPrice: '500.00'
+            lineTotal: '1000.00'
+        address:
+          fullName: Asha Verma
+          phone: '9876543210'
+          addressLine1: 12 Lake View Road
+          addressLine2: Near City Park
+          city: Bengaluru
+          state: Karnataka
+          pinCode: '560001'
+          country: India
+        paymentMethod: CREDIT_CARD
+        paymentStatus: REFUNDED
+        subtotal: '1000.00'
+        tax: '50.00'
+        deliveryCharge: '40.00'
+        pointsRedeemed: 100
+        payableTotal: '990.00'
+        cancellable: false
+        cancellableUntil: null

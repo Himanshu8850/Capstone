@@ -1,0 +1,4 @@
+spring:
+  flyway:
+    # Schema migrations plus the reproducible demo seed (dev and test only).
+    locations: classpath:db/migration,classpath:db/seed
